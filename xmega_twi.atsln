@@ -1,0 +1,20 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Atmel Studio Solution File, Format Version 11.00
+Project("{54F91283-7BC4-4236-8FF9-10F437C3AD48}") = "xmega_twi", "xmega_twi\xmega_twi.cproj", "{E27609BD-3716-4313-8252-4913ABFB3437}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|AVR = Debug|AVR
+		Release|AVR = Release|AVR
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{E27609BD-3716-4313-8252-4913ABFB3437}.Debug|AVR.ActiveCfg = Debug|AVR
+		{E27609BD-3716-4313-8252-4913ABFB3437}.Debug|AVR.Build.0 = Debug|AVR
+		{E27609BD-3716-4313-8252-4913ABFB3437}.Release|AVR.ActiveCfg = Release|AVR
+		{E27609BD-3716-4313-8252-4913ABFB3437}.Release|AVR.Build.0 = Release|AVR
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
