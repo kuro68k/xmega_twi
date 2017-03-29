@@ -1,9 +1,6 @@
 /*
  * twi.c
  *
- * Created: 10/06/2014 16:35:56
- *  Author: mojo-chan
- *
  * TWI (I2C) master driver for XMEGA devices
  */ 
 

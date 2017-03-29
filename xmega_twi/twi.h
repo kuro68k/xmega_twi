@@ -1,8 +1,6 @@
 /*
  * twi.h
  *
- * Created: 10/06/2014 16:36:04
- *  Author: paul.qureshi
  */ 
 
 
