@@ -75,7 +75,6 @@ void TWI_init(void)
 bool TWI_write_reg(uint8_t address, uint8_t reg, const uint8_t *buffer, uint8_t buffer_size)
 {
 	__label__ failure;
-	bool success = false;
 	uint8_t	i;
 
 	// wait for bus to become idle
@@ -110,11 +109,10 @@ bool TWI_write_reg(uint8_t address, uint8_t reg, const uint8_t *buffer, uint8_t 
 	}
 
 	// transaction complete or failed
-	success = true;
+	return true;
 failure:
 	TWI.MASTER.CTRLC = TWI_MASTER_CMD_STOP_gc;
-	
-	return(success);
+	return false;
 }
 
 /**************************************************************************************************
@@ -123,9 +121,8 @@ failure:
 bool TWI_read_reg(uint8_t address, uint8_t reg, uint8_t *buffer, uint8_t buffer_size)
 {
 	__label__ failure;
-	bool success = false;
 	uint8_t	i;
-				
+
 	// wait for bus to become idle
 	i = 0;
 	while ((TWI.MASTER.STATUS & TWI_MASTER_BUSSTATE_gm) != TWI_MASTER_BUSSTATE_IDLE_gc)
@@ -150,15 +147,22 @@ bool TWI_read_reg(uint8_t address, uint8_t reg, uint8_t *buffer, uint8_t buffer_
 
 	// (re)start read
 	TWI.MASTER.ADDR = (address << 1) | TWI_READ_bm;		// sends repeated start and address
-	while ((TWI.MASTER.STATUS & (TWI_MASTER_WIF_bm | TWI_MASTER_ARBLOST_bm | TWI_MASTER_BUSERR_bm)) == 0);
-	if (TWI.MASTER.STATUS & (TWI_MASTER_ARBLOST_bm | TWI_MASTER_BUSERR_bm))
-		goto failure;
-		
+
 	// read requested number of bytes
-	i = buffer_size;
+	uint8_t	timeout = 200;	// double timeout to account for read setup byte
 	while (i)
 	{
-		while ((TWI.MASTER.STATUS & (TWI_MASTER_RIF_bm | TWI_MASTER_ARBLOST_bm | TWI_MASTER_BUSERR_bm)) == 0);
+		while ((TWI.MASTER.STATUS & (TWI_MASTER_RIF_bm | TWI_MASTER_ARBLOST_bm | TWI_MASTER_BUSERR_bm)) == 0)
+		{
+			timeout--;
+			if (timeout == 0)
+				goto failure;
+			_delay_us(1);
+		}
+		timeout = 100;
+
+		*buffer++ = TWI.MASTER.DATA;
+
 		if (TWI.MASTER.STATUS & (TWI_MASTER_ARBLOST_bm | TWI_MASTER_BUSERR_bm))
 			goto failure;
 		i--;
@@ -166,15 +170,13 @@ bool TWI_read_reg(uint8_t address, uint8_t reg, uint8_t *buffer, uint8_t buffer_
 			TWI.MASTER.CTRLC = TWI_MASTER_CMD_RECVTRANS_gc;							// send ACK
 		else
 			TWI.MASTER.CTRLC = TWI_MASTER_ACKACT_bm | TWI_MASTER_CMD_STOP_gc;		// send NACK
-		*buffer++ = TWI.MASTER.DATA;
 	}
-		
+
 	// transaction complete or failed
-	success = true;
+	return true;
 failure:
 	TWI.MASTER.CTRLC = TWI_MASTER_CMD_STOP_gc;
-	
-	return(success);
+	return false;
 }
 
 /**************************************************************************************************
@@ -183,12 +185,10 @@ failure:
 bool TWI_read(uint8_t address, uint8_t *buffer, uint8_t buffer_size)
 {
 	__label__ failure;
-	//bool success = false;
 	uint8_t	i;
 
 	// wait for bus to become idle
 	i = 0;
-	//TWI.MASTER.STATUS = TWI_MASTER_BUSSTATE_IDLE_gc;
 	while ((TWI.MASTER.STATUS & TWI_MASTER_BUSSTATE_gm) != TWI_MASTER_BUSSTATE_IDLE_gc)
 	{
 		if (i > 10)
@@ -199,33 +199,23 @@ bool TWI_read(uint8_t address, uint8_t *buffer, uint8_t buffer_size)
 
 	// start read
 	TWI.MASTER.ADDR = (address << 1) | TWI_READ_bm;		// sends start and address
-	uint8_t	timeout = 0;
-	while ((TWI.MASTER.STATUS & (TWI_MASTER_RIF_bm | TWI_MASTER_ARBLOST_bm | TWI_MASTER_BUSERR_bm)) == 0)
-	{
-		timeout++;
-		if (timeout > 200)
-			goto failure;
-		_delay_us(1);
-	}
-	if (TWI.MASTER.STATUS & (TWI_MASTER_ARBLOST_bm | TWI_MASTER_BUSERR_bm))
-		goto failure;
-	if (TWI.MASTER.STATUS & TWI_MASTER_RXACK_bm)
-		goto failure;
 
-	//success = true;
 	// read requested number of bytes
 	i = buffer_size;
+	uint8_t	timeout = 200;	// double timeout to account for read setup byte
 	while (i)
 	{
-		timeout = 0;
 		while ((TWI.MASTER.STATUS & (TWI_MASTER_RIF_bm | TWI_MASTER_ARBLOST_bm | TWI_MASTER_BUSERR_bm)) == 0)
 		{
-			timeout++;
-			if (timeout > 200)
+			timeout--;
+			if (timeout == 0)
 				goto failure;
 			_delay_us(1);
 		}
-		
+		timeout = 100;
+
+		*buffer++ = TWI.MASTER.DATA;
+
 		if (TWI.MASTER.STATUS & (TWI_MASTER_ARBLOST_bm | TWI_MASTER_BUSERR_bm))
 			goto failure;
 		i--;
@@ -233,17 +223,14 @@ bool TWI_read(uint8_t address, uint8_t *buffer, uint8_t buffer_size)
 			TWI.MASTER.CTRLC = TWI_MASTER_CMD_RECVTRANS_gc;							// send ACK
 		else
 			TWI.MASTER.CTRLC = TWI_MASTER_ACKACT_bm | TWI_MASTER_CMD_STOP_gc;		// send NACK
-		*buffer++ = TWI.MASTER.DATA;
 	}
 
 	// transaction complete or failed
-	return(true);
-	//success = true;
+	return true;
 failure:
 	TWI.MASTER.CTRLC = TWI_MASTER_ACKACT_bm | TWI_MASTER_CMD_STOP_gc;
 
-	return(false);
-	//return(success);
+	return false;
 }
 
 
