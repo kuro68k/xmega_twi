@@ -81,37 +81,45 @@ bool TWI_write_reg(uint8_t address, uint8_t reg, const uint8_t *buffer, uint8_t 
 	i = 0;
 	while ((TWI.MASTER.STATUS & TWI_MASTER_BUSSTATE_gm) != TWI_MASTER_BUSSTATE_IDLE_gc)
 	{
-		if (i > TWI_IDLE_TIMEOUT_MS)
+		if (i > 10)
 			goto failure;
 		_delay_ms(1);
 		i++;
 	}
 
-	// start write
-	TWI.MASTER.ADDR = address << 1;		// sends start and address
-	while ((TWI.MASTER.STATUS & TWI_MASTER_WIF_bm) == 0);
-	if (TWI.MASTER.STATUS & (TWI_MASTER_ARBLOST_bm | TWI_MASTER_BUSERR_bm))
-		goto failure;
+	// start read
+	TWI.MASTER.ADDR = (address << 1) | TWI_READ_bm;		// sends start and address
 
-	// register address
-	TWI.MASTER.DATA = reg;
-	while ((TWI.MASTER.STATUS & TWI_MASTER_WIF_bm) == 0);
-	if (TWI.MASTER.STATUS & (TWI_MASTER_ARBLOST_bm | TWI_MASTER_BUSERR_bm))
-		goto failure;
-
-	// data bytes
-	for (i = 0; i < buffer_size; i++)
+	// read requested number of bytes
+	i = buffer_size;
+	uint8_t	timeout = 200;	// double timeout to account for read setup byte
+	while (i)
 	{
-		TWI.MASTER.DATA = buffer[i];
-		while ((TWI.MASTER.STATUS & TWI_MASTER_WIF_bm) == 0);
+		while ((TWI.MASTER.STATUS & (TWI_MASTER_RIF_bm | TWI_MASTER_ARBLOST_bm | TWI_MASTER_BUSERR_bm)) == 0)
+		{
+			timeout--;
+			if (timeout == 0)
+				goto failure;
+			_delay_us(1);
+		}
+		timeout = 100;
+
+		*buffer++ = TWI.MASTER.DATA;
+
 		if (TWI.MASTER.STATUS & (TWI_MASTER_ARBLOST_bm | TWI_MASTER_BUSERR_bm))
 			goto failure;
+		i--;
+		if (i != 0)
+			TWI.MASTER.CTRLC = TWI_MASTER_CMD_RECVTRANS_gc;							// send ACK
+		else
+			TWI.MASTER.CTRLC = TWI_MASTER_ACKACT_bm | TWI_MASTER_CMD_STOP_gc;		// send NACK
 	}
 
 	// transaction complete or failed
 	return true;
 failure:
-	TWI.MASTER.CTRLC = TWI_MASTER_CMD_STOP_gc;
+	TWI.MASTER.CTRLC = TWI_MASTER_ACKACT_bm | TWI_MASTER_CMD_STOP_gc;
+
 	return false;
 }
 
