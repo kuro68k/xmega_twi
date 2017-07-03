@@ -298,6 +298,7 @@ ISR(TWI_MASTER_vect)
 				default:
 					goto reset;
 			}
+			break;
 		
 		// read register
 		case TWI_TRANSACTION_READ_REG:
@@ -321,6 +322,7 @@ ISR(TWI_MASTER_vect)
 				default:
 					goto reset;
 			}
+			break;
 
 		// read
 		case TWI_TRANSACTION_READ:
