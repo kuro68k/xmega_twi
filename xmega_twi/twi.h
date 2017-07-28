@@ -12,11 +12,11 @@
 #define TWI_MASTER_vect			TWIC_TWIM_vect
 #define TWI_SLAVE_vect			TWIC_TWIS_vect
 
-#define TWI_BAUD_REG			65		// 100KHz, (Fclk/(2*Ftwi)) -5
+#define TWI_BAUD_REG			75		// 100KHz, (Fclk/(2*Ftwi)) -5
 #define TWI_MASTER_INTLVL_gc	TWI_MASTER_INTLVL_MED_gc
 #define TWI_IDLE_TIMEOUT_MS		10
 
-#define TWI_INTERRUPT_DRIVEN
+//#define TWI_INTERRUPT_DRIVEN
 
 
 
