@@ -194,6 +194,7 @@ ISR(TWI_MASTER_vect)
 				((void(*)(bool))callback_func_AT)(true);
 			break;
 	}
+	return;
 	
 reset:
 	TWI.MASTER.STATUS = TWI_MASTER_RIF_bm | TWI_MASTER_WIF_bm | TWI_MASTER_BUSSTATE_IDLE_gc;
