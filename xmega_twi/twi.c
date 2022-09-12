@@ -162,13 +162,13 @@ ISR(TWI_MASTER_vect)
 			
 			switch(state_AT)
 			{
+				*data_buffer_AT++ = TWI.MASTER.DATA;
 				case TWI_STATE_DATA:
 					data_bytes_AT--;
 					if (data_bytes_AT != 0)
 						TWI.MASTER.CTRLC = TWI_MASTER_CMD_RECVTRANS_gc;							// send ACK
 					else
 					{
-						*data_buffer_AT++ = TWI.MASTER.DATA;
 						TWI.MASTER.CTRLC = TWI_MASTER_ACKACT_bm | TWI_MASTER_CMD_STOP_gc;		// send NACK
 						transaction_type_AT = TWI_TRANSACTION_IDLE;
 						transaction_result_AT = TWI_RESULT_OK;
