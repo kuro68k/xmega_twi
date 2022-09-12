@@ -180,6 +180,7 @@ ISR(TWI_MASTER_vect)
 				default:
 					goto reset;
 			}
+			break;
 			
 		// probe to see if a device is there
 		case TWI_TRANSACTION_PROBE:
