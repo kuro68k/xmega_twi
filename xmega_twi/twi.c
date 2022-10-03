@@ -16,7 +16,7 @@
 #include "twi.h"
 
 
-#define	TWI_ERROR_COUNTER				// define to count errors in
+#define	TWI_ERROR_COUNTER				// define to count errors in TWI_fault_counter_AT
 #define TWI_IDLE_TIMEOUT_MS		10		// 0 = immediate fail if bus not idle
 
 #define TWI						TWIC
@@ -162,8 +162,8 @@ ISR(TWI_MASTER_vect)
 			
 			switch(state_AT)
 			{
-				*data_buffer_AT++ = TWI.MASTER.DATA;
 				case TWI_STATE_DATA:
+					*data_buffer_AT++ = TWI.MASTER.DATA;
 					data_bytes_AT--;
 					if (data_bytes_AT != 0)
 						TWI.MASTER.CTRLC = TWI_MASTER_CMD_RECVTRANS_gc;							// send ACK
@@ -198,10 +198,13 @@ ISR(TWI_MASTER_vect)
 	return;
 	
 reset:
+	TWI.MASTER.CTRLC = TWI_MASTER_CMD_STOP_gc;	// release SCL
 	TWI.MASTER.STATUS = TWI_MASTER_RIF_bm | TWI_MASTER_WIF_bm | TWI_MASTER_BUSSTATE_IDLE_gc;
 	transaction_type_AT = TWI_TRANSACTION_IDLE;
 	transaction_result_AT = TWI_RESULT_FAILED;
+#ifdef TWI_ERROR_COUNTER
 	TWI_fault_counter_AT++;
+#endif
 	if (callback_func_AT != NULL)
 		((void(*)(bool))callback_func_AT)(false);
 }
